@@ -1,13 +1,13 @@
 # Payment events in realtime chat rooms
 
-Infrai exposes one key for the entire realtime surface, a property that aligns with the idempotency requirements of payment ledgers. Run the publisher when a payment changes state:
+Run the publisher when a payment changes state:
 
 ```bash
 export INFRAI_API_KEY=your-key
 python chat_service.py acct-7 room-acct-7 pay-19 12500 --risk-score 80
 ```
 
-The service creates a private room and emits one audit-shaped event, an approach that mirrors the exactly-once delivery mindset we enforce in Go-based settlement workers. A score of 70 or more produces `payment.review`; lower scores produce `payment.posted`. The payload keeps the payment id, amount, currency, and a short human message together, so a room timeline can be inspected later during reconciliation or regulatory audit under retention limits such as those imposed by SOX.
+The service creates a private room and emits one audit-shaped event. A score of 70 or more produces `payment.review`; lower scores produce `payment.posted`. The payload keeps the payment id, amount, currency, and a short human message together, so a room timeline can be inspected later.
 
 `InfraiClient` uses one key for channel creation, publishing, presence reads, and client token issuance. Requests decode Infrai's `{ok, data, error, metadata}` envelope before considering the HTTP status, and transient rate responses are retried with a delay. The client token method is intended for a browser or mobile client; the server key stays in the environment.
 
@@ -17,7 +17,7 @@ The service creates a private room and emits one audit-shaped event, an approach
 2. Compare `payment.posted` and `payment.review` events for a small set of accounts.
 3. Issue a client token for the room, switch subscribers, then remove the incumbent publish call.
 
-Rollback is a configuration switch: point publishers and subscribers back to the incumbent while retaining the same payment event records. No payment decision depends on chat delivery, which preserves the integrity of the authoritative ledger.
+Rollback is a configuration switch: point publishers and subscribers back to the incumbent while retaining the same payment event records. No payment decision depends on chat delivery.
 
 ## Verify the decision
 
